@@ -1,5 +1,4 @@
 import cards
-import manager
 
 LANDLORD_UTIL = 40
 
@@ -21,7 +20,6 @@ class Player:
         self.id = id
         self.role = 'Peasant'
         self.hand = cards.Hand()
-        self.manager = manager.Manager()
 
     def set_landlord(self, id):
         if self.id != id:
@@ -58,7 +56,7 @@ class Player:
         length = len(card_list)
         #if card_list[length - 1].value == 170 and card_list[length - 2].value == 160:
         #    score += 16
-        legal_actions = self.manager.legal_actions(card_list)
+        legal_actions = self.legal_actions(card_list)
         if len(legal_actions[12]) > 0: # Rocket
             score += 16
         if len(legal_actions[11]) > 0: # Boomb
@@ -88,6 +86,142 @@ class Player:
         return if the hand is empty
         '''
         return len(self.hand.hand) == 0
+
+    def get_action(self, card_list):
+        '''
+        return value -> key seen in init
+        if value == -1:
+            this is not a valid play
+        '''
+        size = len(card_list)
+        if size == 1: #solo
+            return 1
+        elif size == 2:  # pair and rocket
+            card0 = card_list[0]
+            card1 = card_list[1]
+            if card0.value > 150 and card1.value > 150: # Joker Joker
+                return 12
+            elif int(card0.value / 10) == int(card1.value / 10): #same rank
+                return 2
+            else:
+                return -1 #invalid
+        elif size == 3: # size == 3 is only possible with trio
+            val = int(card_list[0].value / 10)
+            for card in card_list:
+                if not int(card.value / 10) == val:
+                    return -1 # not Trio
+            return 3
+        else:
+            card_dict = dict()
+            for card in card_list:
+                key = int(card.value / 10)
+                if key in card_dict:
+                    card_dict[key] += 1
+                else:
+                    card_dict[key] = 1
+            if size == 4:
+                if len(card_dict) == 1: #bomb
+                    return 11
+                elif len(card_dict) == 2: # 3 + 1 or 2 + 2
+                    for key in card_dict:
+                        if card_dict[key] != 2:
+                            return 4 #Triosolo
+                else: 
+                    return -1
+            elif size == 5:
+                if len(card_dict) == 5: # 5 different cards. maybe chain
+                    return -1#self.handle_chain(card_dict)
+                elif len(card_dict) == 2: #only 3 + 2 is ok.
+                    for key in card_dict:
+                        if card_dict[key] == 3 or card_dict[key] == 2:
+                            return 5
+                        else:
+                            return -1
+                else: #len(card_dict) won't be 1, can be 3, 4, which are invalid
+                    return -1
+            else:
+                return -1
+
+    def evaluate_cards(self, cur_cards, prev_action):
+        '''
+        Bsed on the prev_action(that is also the current action), provide util score of the card
+        '''
+        card_dict = dict()
+        for card in cur_cards:
+            key = int(card.value / 10)
+            if key in card_dict:
+                card_dict[key] += 1
+            else:
+                card_dict[key] = 1
+        if prev_action == 1:
+            return int(cur_cards[0].value / 10)
+        elif prev_action == 2:
+            return int(cur_cards[0].value / 10)
+        elif prev_action == 3:
+            return int(cur_cards[0].value / 10)
+        elif prev_action == 4:
+            for key in card_dict:
+                if card_dict[key] == 3:
+                    return key
+            return -1
+        elif prev_action == 5:
+            for key in card_dict:
+                if card_dict[key] == 3:
+                    return key
+            return -1
+        elif prev_action == 6:
+            score = 0
+            for key in card_dict:
+                score += key
+            return score
+        elif prev_action == 7:
+            score = 0
+            for key in card_dict:
+                score += key
+            return score
+        elif prev_action == 8:
+            score = 0
+            for key in card_dict:
+                score += key
+            return score
+        elif prev_action == 9:
+            score = 0
+            for key in card_dict:
+                if card_dict[key] == 3:
+                    score += key
+            return score
+        elif prev_action == 10:
+            score = 0
+            for key in card_dict:
+                if card_dict[key] == 3:
+                    score += key
+            return score
+        elif prev_action == 11:
+            return int(cur_cards[0].value / 10)
+        elif prev_action == 12:
+            return 200
+        else:
+            return -1
+
+    def AI_play(self, player, id, positive, prev_action, prev_cards):
+        '''
+        AI is required here.
+        Ai methods should be in manager.py or player.py?
+
+        return a list of card index. Card is 1 indexed
+        player.hand: Hand [H5 BJoker RJoker] -> [1, 2, 3] 
+        play card BJoker RJoker -> return [2, 3]
+        '''
+        card = []
+        if id == 1:
+            card = self.greedy(player, id, positive, prev_action, prev_cards)
+        else:
+            card = self.a_search(player, id, positive, prev_action, prev_cards)
+        if len(card) == 0:
+            print("Player {} skip".format(id))
+            return []
+        print("Player {} plays {}".format(id, card))
+        return self.card_to_index(player.hand.hand, card)
 
     def legal_actions(self, hand): # hand is array
         '''

@@ -13,3 +13,4 @@ Goal of the game:
 3. Client can choose whether to play with AI only
 4. There are several AIs in the program. Currently we have A* search and Greedy search
 5. CNN, Reinforcement learning is appreciated
+6. Introduce UI to the game

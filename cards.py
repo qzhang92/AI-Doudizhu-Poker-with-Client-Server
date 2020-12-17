@@ -100,8 +100,10 @@ class Card:
             ('A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K')
         '''
         if suit not in SUITS:
+            print(suit)
             raise ValueError('invalid suit')
         if rank not in RANKS:
+            print(rank)
             raise ValueError('invalid rank')
         
         if joker != None:

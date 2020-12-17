@@ -27,19 +27,23 @@ class Player:
         self.role = "Landlord"
         msg = "Player {} is landlord".format(id)
         print(msg)
+        
 
     def add_card(self, card):
         self.hand.add_card(card)
 
     def sort_cards(self):
         self.hand.sort_cards()
+
+    def print_hand(self):
+        self.hand.print_hand()
     
     def landlord_choice(self, index):
         if index == 3:   #If this is the last player in the round
             return True
         if self.id == 3:
             while True:
-                is_landlord = input("Do you wnat to become the landlord? (Y/N)")
+                is_landlord = input("(Y/N)")
                 if is_landlord == 'Y':
                     return True
                 elif is_landlord == 'N':

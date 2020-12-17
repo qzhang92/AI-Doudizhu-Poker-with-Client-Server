@@ -24,6 +24,10 @@ def main(argv):
     # Get the landlord
     landlord = handle_landlord(players, deck)
 
+    for player in players:
+        player.sort_cards()
+        print(player.hand) #Todo delete it 
+
     # Game play
     game_play(players, landlord)
 
@@ -34,7 +38,6 @@ def handle_deal(players, deck):
         players[index].add_card(card)
         index += 1
         index = index % 3
-    
     for player in players:
         player.sort_cards()
         print(player.hand) #Todo delete it 
@@ -62,6 +65,7 @@ def handle_landlord(players, deck):
                 card = deck.deal_card()
                 players[cur].add_card(card)
                 players[cur].hand.sort_cards()
+            return cur
         else:
             print("Player {} is peasant.".format(cur + 1))
         cur += 1
@@ -89,7 +93,7 @@ def game_play(players, landlord):
         if last_player == cur and not positive:
             positive = True
 
-        if player.id == 3: #human
+        if player.id == HUMAN_ID: #human
             valid = False
             while not valid:
                 # handle input

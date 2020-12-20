@@ -30,6 +30,8 @@ def main(argv):
 
     handle_landlord(user, sock)
 
+    game_play(user, sock)
+
 def handle_deal(user, sock):
     response = sock.recv(BUFF_SIZE).decode()
     while response != 'OK':
@@ -55,7 +57,68 @@ def handle_landlord(user, sock):
         handle_deal(user, sock)
         user.sort_cards()
         user.print_hand()
-        
+
+def game_play(user, sock):
+    while game_not_over(sock, user):
+        resp = sock.recv(BUFF_SIZE).decode()
+        if not resp == 'True' or resp == 'False':
+            print(resp)
+            sock.send("OK".encode())
+            continue
+        positive = False
+        if resp == 'True':
+            positive = True
+        valid = False
+        while not valid:
+            user.print_hand()
+            print('Please choose what card you want to play. \n Example: if you want to play 1st and 13rd card, type in: 1 13. 1-indexed \n')
+            cards = input() # If no card to play, input nothing(press 'enter')
+            card_list, valid = handle_input(cards, len(user.hand.hand))
+            if valid and len(card_list) == 0 and positive:
+                print("Fisrt player must play cards.")
+                continue
+            if valid and len(card_list) == 0: # Did not play card
+                sock.send("N".encode())
+                break
+            
+            out_list = ' '
+            for index in card_list:
+                out_list += player.hand.hand[index].suit + player.hand.hand[index].rank + ' '
+            print("Player {} plays {}".format(player.id, out_list))
+            sock.send(out_list.encode())
+            resp = sock.recv(BUFF_SIZE).decode()
+            if resp == "OK":
+                valid = True
+            else:
+                valid = False
+                print("Wrong cards. Please choose again.")
+
+
+def handle_input(cards, hand_len):
+    '''
+    Turn the input string to a list of card
+    return the list of card and if the input is valid
+    '''
+    if cards == None or len(cards) == 0:
+        return [], True
+
+    cards = cards.strip().split()
+    result = []
+    for card in cards:
+        index = int(card) - 1
+        if index <= 0 or index > hand_len:
+            return [], False
+        result.append(index)
+
+    return result, True        
+
+def game_not_over(sock, user):
+    if len(user.hand.hand) == 0:
+        sock.send('OVER'.encode())
+        return True
+    else:
+        sock.send('CONTINUE'.encode())
+        return False
 
 def get_cmd_args(argv):
     '''

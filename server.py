@@ -24,7 +24,7 @@ def main(argv):
     players.append(player.Player(2))
 
     # Wait for `start` from a player and set-up game
-    mgr, conn = wait_for_start(sock, players)
+    conn = wait_for_start(sock, players)
 
     print(players)
 
@@ -37,7 +37,7 @@ def main(argv):
     landlord = handle_landlord(players, deck, conn)
 
     # Game play
-    game_play(players, landlord. conn)
+    game_play(players, landlord, conn)
 
 def wait_for_start(sock, players):
     while True:
@@ -52,9 +52,8 @@ def wait_for_start(sock, players):
             err = 'err start waiting for start but received: ' + msg
             conn.send(err.encode())
         else:
-            mgr = manager.Manager()
             conn.send("Player 3 joined. Game start.".encode())
-            return mgr, conn
+            return conn
 
 def handle_deal(players, deck, conn):
     index = 0
@@ -133,15 +132,18 @@ def game_play(players, landlord, conn):
     '''
     cur = landlord
     positive = True
-    manager = mgr.Manager()
+    
     prev_action = -1 # repesented by an index. See manager.card_style
     last_player = 0
     prev_cards = []
 
-    while not_game_over(players):
+    while not game_over(players, conn):
         print("Player {} play game".format(cur + 1))
+
+        if last_player == cur and not positive:
+            positive = True
         if cur == 2:
-            msg = "Please choose what card you want to play. \n Example: if you want to play 1st and 13rd card, type in: 1 13. 1-indexed \n"
+            msg = "{}".format(positive)
             conn.send(msg.encode())
             response = conn.recv(BUFF_SIZE).decode()
             cards = response.strip().split()
@@ -153,19 +155,30 @@ def game_play(players, landlord, conn):
                 card_list.append(card)
             print(card_list)
         else:
+            player = players[cur]
             print("Prev_cards {} positive {} prev_action {}".format(prev_cards, positive, prev_action))
-            card_list = manager.AI_play(player, player.id, positive, prev_action, prev_cards) # AI should play when it can play
+            card_list = player.AI_play(player, player.id, positive, prev_action, prev_cards) # AI should play when it can play
             if not len(card_list) == 0:
                 prev_cards = player.card_play(card_list)
-                prev_action = manager.get_action(prev_cards)
+                prev_action =player.get_action(prev_cards)
                 last_player = cur
-                # Change positive if possible
-                if positive:
-                    positive = False
-        cur +=1
+                msg = "Player {} plays {}".format(id, prev_cards)
+                print(msg)
+                conn.send(msg.encode())
+                resp = conn.recv(BUFF_SIZE).decode()
+            else:
+                msg = "Player {} skipped".format(player.id)
+                print(msg)
+                conn.send(msg.encode())
+                resp = conn.recv(BUFF_SIZE).decode()
+
+        # Change positive if possible
+        if positive:
+            positive = False
+        cur += 1
         cur = cur % 3
 
-def game_over(players):
+def game_over(players, conn):
     '''
     Check if the game is over
     When a player has no card in hand, it will win and game is over
@@ -174,6 +187,10 @@ def game_over(players):
         if player.is_hand_empty():
             print("Game is over. {} wins.".format(player.id))
             return True
+    resp = conn.recv(BUFF_SIZE).decode()
+    if resp == 'OVER':
+        print("Game is over, Player 3 wins")
+        return True
     return False
 
 

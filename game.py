@@ -85,7 +85,7 @@ def game_play(players, landlord):
     prev_action = -1 # repesented by an index. See manager.card_style
     last_player = 0
     prev_cards = []
-    while not game_over(players):
+    while not game_over(players, conn):
         
         player = players[cur]
         print("Player {} play game".format(player.id))
